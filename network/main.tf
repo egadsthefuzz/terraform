@@ -6,7 +6,18 @@
 # custom public routetable with route to internetgateway
 # route table associations for both the public subnets
 # ----- networking/main.tf
-data "aws_availability_zones" "available" {}
+provider aws {
+  shared_credentials_file = var.shared_credentials
+  profile                 = var.profile
+  region                  = var.region
+}
+
+data "aws_availability_zones" "available" {
+  filter {
+   name = "region-name"
+   values = [var.aws_region]
+ }
+}
 
 #vpc
 resource "aws_vpc" "splunkvpc" {

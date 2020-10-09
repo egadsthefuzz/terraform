@@ -6,6 +6,31 @@ locals {
   }
 }
 
+
+
+provider aws {
+  shared_credentials_file = var.shared_credentials
+  profile                 = var.profile
+  region                  = var.region
+}
+
+data "aws_availability_zones" "available" {
+  filter {
+   name = "region-name"
+   values = [var.region]
+ }
+}
+
+data local_file "private_key" {
+  filename = var.pvt_key
+}
+
+# Create an ec2_key and map it to the local file specified above
+#resource aws_key_pair "ec2_key" {
+#  key_name   = var.environment
+#  public_key = data.local_file.public_key.content
+#}
+
 #create a cloudwatch log group for this project
 resource "aws_cloudwatch_log_group" "log_group" {
   name              = var.cloudwatch_loggroup_name
@@ -432,7 +457,7 @@ resource "aws_launch_configuration" "splunk_indexer_cluster" {
   # existing resource and create a replacement.
   # We're only setting the name_prefix here,
   # Terraform will add a random string at the end to keep it unique.
-  name_prefix   = "Splunk-IXRC-launch-conf-${var.project_name}"
+  name_prefix   = "Splunk-Indexer-launch-conf-${var.project_name}"
   count         = var.enable_splunk_shc ? 1 : 0
   image_id      = var.splunk-ami
   instance_type = var.splunk_instance_type
@@ -459,7 +484,7 @@ resource "aws_autoscaling_group" "splunk_indexer_cluster" {
   depends_on = [
   aws_instance.splunk_indexer_clustermaster]
   count                = var.enable_splunk_shc ? 1 : 0
-  name_prefix          = "Splunk-IXRC-asg-${var.project_name}"
+  name_prefix          = "Splunk-Indexer-asg-${var.project_name}"
   min_size             = var.indexer_clustermembercount
   desired_capacity     = var.indexer_clustermembercount
   max_size             = var.indexer_clustermembercount
@@ -477,7 +502,7 @@ resource "aws_autoscaling_group" "splunk_indexer_cluster" {
   tag {
     key                 = "Name"
     propagate_at_launch = true
-    value               = "Splunk-IXRC-asg-${var.project_name}"
+    value               = "Splunk-Indexer-asg-${var.project_name}"
   }
   tag {
     key                 = var.asgindex
@@ -899,10 +924,10 @@ resource "null_resource" "get_sh_ip" {
   depends_on = [
   aws_autoscaling_group.splunk_shc]
   provisioner "local-exec" {
-    command = "aws ec2 describe-instances --region us-east-1 --instance-ids $(aws autoscaling describe-auto-scaling-instances --region us-east-1 --output text --query 'AutoScalingInstances[].[AutoScalingGroupName,InstanceId]'| grep -P ${aws_autoscaling_group.splunk_shc.0.name}| cut -f 2) --query 'Reservations[].Instances[].PrivateIpAddress' --filters Name=instance-state-name,Values=running --output text|cut -f 1 > /opt/terraform/work/out.txt"
+    command = "aws ec2 describe-instances --region ap-southeast-2 --instance-ids $(aws autoscaling describe-auto-scaling-instances --region ap-southeast-2 --output text --query 'AutoScalingInstances[].[AutoScalingGroupName,InstanceId]'| grep -P ${aws_autoscaling_group.splunk_shc.0.name}| cut -f 2) --query 'Reservations[].Instances[].PrivateIpAddress' --filters Name=instance-state-name,Values=running --output text|cut -f 1 > /home/william/out.txt"
   }
   provisioner "local-exec" {
-    command = "rm -rf /opt/terraform/work/out.txt"
+    command = "rm -rf /home/william/out.txt"
     when    = destroy
   }
 }
@@ -912,7 +937,7 @@ data "local_file" "sh_ip" {
   count = var.enable_splunk_shc ? 1 : 0
   depends_on = [
   null_resource.get_sh_ip]
-  filename = "/opt/terraform/work/out.txt"
+  filename = "/home/william/out.txt"
 }
 
 
@@ -951,10 +976,10 @@ resource "null_resource" "bootstrap_splunk_shc" {
   }
 
   connection {
-    bastion_private_key = var.pvt_key
+    bastion_private_key = data.local_file.private_key.content
     bastion_user        = var.ec2-user
     user                = var.ec2-user
-    private_key         = var.pvt_key
+    private_key         = data.local_file.private_key.content
     bastion_host        = var.bastion_public_ip
     host                = data.local_file.sh_ip.0.content
     timeout             = "20m"

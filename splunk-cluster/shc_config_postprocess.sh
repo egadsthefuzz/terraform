@@ -5,9 +5,9 @@ ready=false
 readycount=0
 shcmem=""
 for i in $(
-  aws ec2 describe-instances --region us-east-1 --instance-ids \
+  aws ec2 describe-instances --region ap-southeast-2 --instance-ids \
     $(
-      aws autoscaling describe-auto-scaling-instances --region us-east-1 --output text \
+      aws autoscaling describe-auto-scaling-instances --region ap-southeast-2 --output text \
         --query "AutoScalingInstances[].[AutoScalingGroupName,InstanceId]" | grep -P "${splunkshcasgname}" | cut -f 2
     ) \
     --query "Reservations[].Instances[].PrivateDnsName" \

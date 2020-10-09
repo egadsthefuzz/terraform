@@ -8,9 +8,9 @@ service splunk restart
 #add outputs.conf to forward SH logs data to indexer cluster
 ixrpeers=""
 for i in $(
-  aws ec2 describe-instances --region us-east-1 --instance-ids \
+  aws ec2 describe-instances --region ap-southeast-2 --instance-ids \
     $(
-      aws autoscaling describe-auto-scaling-instances --region us-east-1 --output text \
+      aws autoscaling describe-auto-scaling-instances --region ap-southeast-2 --output text \
         --query "AutoScalingInstances[].[AutoScalingGroupName,InstanceId]" | grep -P "${splunkixrasgname}" | cut -f 2
     ) \
     --query "Reservations[].Instances[].PrivateIpAddress" \

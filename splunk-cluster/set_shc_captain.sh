@@ -9,9 +9,9 @@ echo "sleeping "$k" seconds"
 sleep $k
 echo "resuming now..."
 for i in $(
-  aws ec2 describe-instances --region us-east-1 --instance-ids \
+  aws ec2 describe-instances --region ap-southeast-2 --instance-ids \
   $(
-    aws autoscaling describe-auto-scaling-instances --region us-east-1 --output text \
+    aws autoscaling describe-auto-scaling-instances --region ap-southeast-2 --output text \
     --query "AutoScalingInstances[?AutoScalingGroupName=='$splunkasg'].InstanceId"
   ) \
   --query "Reservations[].Instances[].PrivateDnsName" \

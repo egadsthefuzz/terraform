@@ -6,106 +6,131 @@ locals {
   }
 }
 
-resource "aws_s3_bucket" "splunkappdeploy" {
-  bucket        = var.splunk_app_deploy_bucket
-  force_destroy = true
-  acl           = "private"
-  //  server_side_encryption_configuration {
-  //    rule {
-  //      apply_server_side_encryption_by_default {
-  //        kms_master_key_id = aws_kms_key.s3key.arn
-  //        sse_algorithm = "aws:kms"
-  //      }
-  //    }
-  //  }
-  tags = merge(local.base_tags, map("Name", var.splunk_app_deploy_bucket))
+provider aws {
+  shared_credentials_file = var.shared_credentials
+  profile                 = var.profile
+  region                  = var.region
 }
 
-#allow splunk app deploy bucket to invoke the lambda
-resource "aws_lambda_permission" "allow_bucket" {
-  statement_id  = "AllowExecutionFromS3Bucket"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.splunk_app_deploy.arn
-  principal     = "s3.amazonaws.com"
-  source_arn    = aws_s3_bucket.splunkappdeploy.arn
+# Create a data object using the user's public SSH key
+# If no such file exists, the user must generate it using ssh-keygen
+data local_file "public_key" {
+  filename = var.data_local_file_public_key
 }
+
+data "aws_availability_zones" "available" {
+  filter {
+   name = "region-name"
+   values = [var.region]
+ }
+}
+
+# Create an ec2_key and map it to the local file specified above
+resource aws_key_pair "ec2_key" {
+  key_name   = var.environment
+  public_key = data.local_file.public_key.content
+}
+
+#resource "aws_s3_bucket" "splunkappdeploy" {
+#  bucket        = var.splunk_app_deploy_bucket
+#  force_destroy = true 
+#  acl           = "private"
+#  //  server_side_encryption_configuration {
+#  //    rule {
+#  //      apply_server_side_encryption_by_default {
+#  //        kms_master_key_id = aws_kms_key.s3key.arn
+#  //        sse_algorithm = "aws:kms"
+#  //      }
+#  //    }
+#  //  }
+#  tags = merge(local.base_tags, map("Name", var.splunk_app_deploy_bucket))
+#}
+
+##allow splunk app deploy bucket to invoke the lambda
+#resource "aws_lambda_permission" "allow_bucket" {
+#  statement_id  = "AllowExecutionFromS3Bucket"
+#  action        = "lambda:InvokeFunction"
+#  function_name = aws_lambda_function.splunk_app_deploy.arn
+#  principal     = "s3.amazonaws.com"
+#  source_arn    = aws_s3_bucket.splunkappdeploy.arn
+#}
 
 #invoke lambda for any new object creation
-resource "aws_s3_bucket_notification" "bucket_notification" {
-  bucket = aws_s3_bucket.splunkappdeploy.id
+#resource "aws_s3_bucket_notification" "bucket_notification" {
+#  bucket = aws_s3_bucket.splunkappdeploy.id
+#
+#  lambda_function {
+#    lambda_function_arn = aws_lambda_function.splunk_app_deploy.arn
+#    events = [
+#    "s3:ObjectCreated:*"]
+#  }
+#
+#  depends_on = [
+#  ws_lambda_permission.allow_bucket]
+#}
 
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.splunk_app_deploy.arn
-    events = [
-    "s3:ObjectCreated:*"]
-  }
 
-  depends_on = [
-  aws_lambda_permission.allow_bucket]
-}
-
-
-resource "aws_lambda_function" "splunk_app_deploy" {
-  function_name = "splunkappdeployer"
-
-  # The bucket name as created earlier with "aws s3api create-bucket"
-  s3_bucket = var.splunk_splunk_landing
-  s3_key    = "splunk/apps/splunkappdeploy.zip"
-
-  # "main" is the filename within the zip file (main.js) and "handler"
-  # is the name of the property under which the handler function was
-  # exported in that file.
-  handler = "app.lambda_handler"
-  runtime = "python3.7"
-  timeout = 60
-  role    = aws_iam_role.lambda_exec.arn
-}
+#resource "aws_lambda_function" "splunk_app_deploy" {
+#  function_name = "splunkappdeployer"
+#
+#  # The bucket name as created earlier with "aws s3api create-bucket"
+#  s3_bucket = var.s3_objects_bucket
+#  s3_key    = "splunk/apps/splunkappdeploy.zip"
+#
+#  # "main" is the filename within the zip file (main.js) and "handler"
+#  # is the name of the property under which the handler function was
+#  # exported in that file.
+#  handler = "app.lambda_handler"
+#  runtime = "python3.7"
+#  timeout = 60
+#  role    = aws_iam_role.lambda_exec.arn
+#}
 
 # IAM role which dictates what other AWS services the Lambda function
 # may access.
 #read the zip file from the lambda repo bucket
 #read the s3 bucket that has the splunk app to be deployed
 #write access to cloudwatch
-resource "aws_iam_role" "lambda_exec" {
-  name                  = "serverless_example_lambda"
-  path                  = "/"
-  force_detach_policies = true
-  assume_role_policy    = data.aws_iam_policy_document.splunk-lambda-assume-role-policy.json
-  tags                  = merge(local.base_tags, map("Name", "lambda_exec"))
-}
+#resource "aws_iam_role" "lambda_exec" {
+#  name                  = "serverless_example_lambda"
+#  path                  = "/"
+#  force_detach_policies = true
+#  assume_role_policy    = data.aws_iam_policy_document.splunk-lambda-assume-role-policy.json
+#  tags                  = merge(local.base_tags, map("Name", "lambda_exec"))
+#}
 
 #attach the policy to the iam role
-resource "aws_iam_policy_attachment" "lambda_auto_deploy_s3" {
-  name       = "lambda_attach"
-  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
-  roles = [
-  aws_iam_role.lambda_exec.id]
-}
+#resource "aws_iam_policy_attachment" "lambda_auto_deploy_s3" {
+#  name       = "lambda_attach"
+#  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+#  roles = [
+#  aws_iam_role.lambda_exec.id]
+#}
 
 #attach the policy to the iam role
-resource "aws_iam_policy_attachment" "lambda_auto_deploy_ec2" {
-  name       = "lambda_attach"
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess"
-  roles = [
-  aws_iam_role.lambda_exec.id]
-}
+#resource "aws_iam_policy_attachment" "lambda_auto_deploy_ec2" {
+#  name       = "lambda_attach"
+#  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess"
+#  roles = [
+#  aws_iam_role.lambda_exec.id]
+#}
 
 
 #attach the policy to the iam role
-resource "aws_iam_policy_attachment" "lambda_auto_deploy_ssm" {
-  name       = "lambda_attach"
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-  roles = [
-  aws_iam_role.lambda_exec.id]
-}
+#resource "aws_iam_policy_attachment" "lambda_auto_deploy_ssm" {
+#  name       = "lambda_attach"
+#  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+#  roles = [
+#  aws_iam_role.lambda_exec.id]
+#}
 
 #attach the policy to the iam role
-resource "aws_iam_policy_attachment" "lambda_auto_deploy_sns_publish" {
-  name       = "lambda_attach"
-  policy_arn = "arn:aws:iam::894534430688:policy/service-role/AWSLambdaSNSPublishPolicyExecutionRole-f68893e9-dc4f-41e8-ace7-214301147612"
-  roles = [
-  aws_iam_role.lambda_exec.id]
-}
+#resource "aws_iam_policy_attachment" "lambda_auto_deploy_sns_publish" {
+#  name       = "lambda_attach"
+#  policy_arn = "arn:aws:iam::894534430688:policy/service-role/AWSLambdaSNSPublishPolicyExecutionRole-f68893e9-dc4f-41e8-ace7-214301147612"
+#  roles = [
+#  aws_iam_role.lambda_exec.id]
+#}
 
 resource "aws_kms_key" "s3key" {
   description             = "This key is used to encrypt s3 license bucket"
@@ -133,7 +158,7 @@ resource "null_resource" "copy_splunk_license_file" {
   depends_on = [
   aws_s3_bucket.s3_bucket_splunk_license]
   provisioner "local-exec" {
-    command = "aws s3 cp s3://${var.splunk_splunk_landing}/${var.splunk_license_file} s3://${var.splunk_license_bucket}/${var.splunk_license_file}"
+    command = "aws s3 cp s3://${var.s3_objects_bucket}/${var.splunk_license_file} s3://${var.splunk_license_bucket}/${var.splunk_license_file}"
   }
 }
 
@@ -220,6 +245,7 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 //}
 
 resource "aws_vpc_endpoint" "s3" {
+  provider     = aws
   vpc_id       = var.vpc_id
   service_name = var.endpoint_service_name
   tags         = merge(local.base_tags, map("Name", "s3_vpc_endpoint"))
@@ -251,7 +277,7 @@ resource "aws_instance" "splunk_license_server" {
   subnet_id     = var.subnetCid
   vpc_security_group_ids = [
   aws_security_group.splunk_sg_license_server.id]
-  key_name             = var.key_name
+  key_name             = aws_key_pair.ec2_key.key_name
   iam_instance_profile = aws_iam_instance_profile.ec2_profile.id
   user_data            = data.template_file.splunk_l_server_init.rendered
   tags                 = merge(local.base_tags, map("Name", "${var.project_name}-License Server"))
@@ -355,14 +381,14 @@ resource "aws_security_group" "splunk_sg_license_server" {
 # Request a spot instance - bastion host
 resource "aws_spot_instance_request" "bastionH_WindowsUser" {
   count                = 1
-  ami                  = var.ec2_ami[count.index]
+  ami                  = var.ec2_ami
   instance_type        = var.bastion_instance_type
   spot_price           = var.spot_price
   spot_type            = "one-time"
   wait_for_fulfillment = true
   #block_duration_minutes = 60
   #valid_until="2020-03-21T13:00:00-07:00"
-  key_name  = var.key_name
+  key_name  = aws_key_pair.ec2_key.key_name
   subnet_id = var.subnetAid
   vpc_security_group_ids = [
     [
@@ -429,7 +455,7 @@ resource "aws_security_group" "WinUser_sg" {
 #add a nat instance to the module
 resource aws_instance "nat_instance" {
   count             = var.enable_nat_instance ? 1 : 0
-  ami               = "ami-00a9d4a05375b2763"
+  ami               = var.ec2_ami 
   instance_type     = "t2.micro"
   source_dest_check = false
   subnet_id         = var.subnetAid
