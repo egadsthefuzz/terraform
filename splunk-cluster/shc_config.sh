@@ -7,7 +7,7 @@ service splunk restart
 sudo -u splunk /data/splunk/splunk/bin/splunk init shcluster-config -auth admin:${splunkadminpass} -mgmt_uri https://"$(curl http://169.254.169.254/latest/meta-data/local-hostname)":${splunkmgmt} -replication_port ${splunkshcrepport} -replication_factor ${splunkshcrepfact} -conf_deploy_fetch_url https://${deployer_ip}:${splunkmgmt} -secret ${shclusterkey} -shcluster_label ${shclusterlabel}
 service splunk restart
 #integrate search head cluster with ixr cluster - run on each search head
-sudo -u splunk /data/splunk/splunk/bin/splunk edit cluster-config -mode searchhead -master_uri 'https://${ixrcmaster}:${splunkmgmt}' -secret ${ixrckey} -auth admin:${splunkadminpass}
+sudo -u splunk /data/splunk/splunk/bin/splunk edit cluster-config -mode searchhead -master_uri 'https://${indexer_clustermaster}:${splunkmgmt}' -secret ${indexer_clusterkey} -auth admin:${splunkadminpass}
 service splunk restart
 #add outputs.conf to forward SH logs data to indexer cluster
 ixrpeers=""

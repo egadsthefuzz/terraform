@@ -262,22 +262,22 @@ resource "aws_security_group" "splunk_sg_single_node" {
 
 
 #init logic for ixr master
-data "template_file" "ixrcmaster_init" {
-  template = file("${path.module}/ixrcmaster_config.sh")
+data "template_file" "indexer_clustermaster_init" {
+  template = file("${path.module}/indexer_clustermaster_config.sh")
 
   vars = {
-    splunkixrcrepport       = var.splunkixrcrepport
-    ixrcrepf                = var.ixrcrepf
-    ixrcsf                  = var.ixrcsf
+    splunkindexer_clusterrepport       = var.splunkindexer_clusterrepport
+    indexer_clusterrepf                = var.indexer_clusterrepf
+    indexer_clustersf                  = var.indexer_clustersf
     license_master_hostname = var.license_server_hostname
     splunk_mgmt_port        = var.splunk_mgmt_port
     splunkadminpass         = var.splunkadminpass
-    ixrckey                 = var.ixrckey
-    ixrclabel               = var.ixrclabel
+    indexer_clusterkey                 = var.indexer_clusterkey
+    indexer_clusterlabel               = var.indexer_clusterlabel
   }
 }
 
-data "template_cloudinit_config" "ixrcmaster_cloud_init" {
+data "template_cloudinit_config" "indexer_clustermaster_cloud_init" {
   gzip          = false
   base64_encode = false
 
@@ -288,38 +288,38 @@ data "template_cloudinit_config" "ixrcmaster_cloud_init" {
     content      = data.template_file.cloud_watch.rendered
   }
   part {
-    filename     = "ixrcmaster.sh"
+    filename     = "indexer_clustermaster.sh"
     content_type = "text/x-shellscript"
-    content      = data.template_file.ixrcmaster_init.rendered
+    content      = data.template_file.indexer_clustermaster_init.rendered
   }
 }
 
-# splunk ixrc master
+# splunk indexer_cluster master
 # start with base splunk ami
-# add ixrc master clustering stanza
+# add indexer_cluster master clustering stanza
 # add as a slave to splunk license master
-resource "aws_instance" "splunk_ixrcmaster" {
+resource "aws_instance" "splunk_indexer_clustermaster" {
   count         = var.enable_splunk_shc ? 1 : 0
   ami           = var.splunk-ami
   instance_type = var.splunk_instance_type
   subnet_id     = var.subnetAid
   vpc_security_group_ids = [
-  aws_security_group.splunk_sg_ixrc.0.id]
+  aws_security_group.splunk_sg_indexer_cluster.0.id]
   key_name             = var.key_name
   iam_instance_profile = aws_iam_instance_profile.ec2_profile.id
-  user_data            = data.template_cloudinit_config.ixrcmaster_cloud_init.rendered
+  user_data            = data.template_cloudinit_config.indexer_clustermaster_cloud_init.rendered
   tags                 = merge(local.base_tags, map("Name", "IXRCMaster"))
 }
 
 
-data "template_file" "ixrc_init" {
+data "template_file" "indexer_cluster_init" {
 
-  template = file("${path.module}/ixrc_config.sh")
+  template = file("${path.module}/indexer_cluster_config.sh")
 
   vars = {
-    splunkixrcrepport       = var.splunkixrcrepport
-    ixrcmaster              = aws_instance.splunk_ixrcmaster.0.private_dns
-    ixrckey                 = var.ixrckey
+    splunkindexer_clusterrepport       = var.splunkindexer_clusterrepport
+    indexer_clustermaster              = aws_instance.splunk_indexer_clustermaster.0.private_dns
+    indexer_clusterkey                 = var.indexer_clusterkey
     shcmembercount          = var.shcmembercount
     license_master_hostname = var.license_server_hostname
     splunkmgmt              = var.splunk_mgmt_port
@@ -328,7 +328,7 @@ data "template_file" "ixrc_init" {
   }
 }
 
-data "template_cloudinit_config" "ixrc_cloud_init" {
+data "template_cloudinit_config" "indexer_cluster_cloud_init" {
   gzip          = false
   base64_encode = false
 
@@ -339,19 +339,19 @@ data "template_cloudinit_config" "ixrc_cloud_init" {
     content      = data.template_file.cloud_watch.rendered
   }
   part {
-    filename     = "ixrc.sh"
+    filename     = "indexer_cluster.sh"
     content_type = "text/x-shellscript"
-    content      = data.template_file.ixrc_init.rendered
+    content      = data.template_file.indexer_cluster_init.rendered
   }
 }
 
-#security group for all splunk ixrc nodes
+#security group for all splunk indexer_cluster nodes
 #allows access from shc to splunk mgmt port
 #allows ssh from the bastion host subnet
-resource "aws_security_group" "splunk_sg_ixrc" {
+resource "aws_security_group" "splunk_sg_indexer_cluster" {
   count       = var.enable_splunk_shc ? 1 : 0
-  name        = "splunk_splunk_sg_ixrc"
-  description = "Used by members for splunk ixrc"
+  name        = "splunk_splunk_sg_indexer_cluster"
+  description = "Used by members for splunk indexer_cluster"
   vpc_id      = var.vpc_id
 
   #splunk-mgmt,rep
@@ -364,8 +364,8 @@ resource "aws_security_group" "splunk_sg_ixrc" {
     var.subnetBCIDR]
   }
   ingress {
-    from_port = var.splunkixrcrepport
-    to_port   = var.splunkixrcrepport
+    from_port = var.splunkindexer_clusterrepport
+    to_port   = var.splunkindexer_clusterrepport
     protocol  = "tcp"
     cidr_blocks = [
       var.subnetACIDR,
@@ -383,8 +383,8 @@ resource "aws_security_group" "splunk_sg_ixrc" {
 
   }
   egress {
-    from_port = var.splunkixrcrepport
-    to_port   = var.splunkixrcrepport
+    from_port = var.splunkindexer_clusterrepport
+    to_port   = var.splunkindexer_clusterrepport
     protocol  = "tcp"
     cidr_blocks = [
       var.subnetACIDR,
@@ -426,7 +426,7 @@ resource "aws_security_group" "splunk_sg_ixrc" {
 }
 
 
-resource "aws_launch_configuration" "splunk_ixrc" {
+resource "aws_launch_configuration" "splunk_indexer_cluster" {
   # Launch Configurations cannot be updated after creation with the AWS API.
   # In order to update a Launch Configuration, Terraform will destroy the
   # existing resource and create a replacement.
@@ -437,34 +437,34 @@ resource "aws_launch_configuration" "splunk_ixrc" {
   image_id      = var.splunk-ami
   instance_type = var.splunk_instance_type
   security_groups = [
-  aws_security_group.splunk_sg_ixrc.0.id]
+  aws_security_group.splunk_sg_indexer_cluster.0.id]
   key_name             = var.key_name
   iam_instance_profile = aws_iam_instance_profile.ec2_profile.id
-  user_data            = data.template_cloudinit_config.ixrc_cloud_init.rendered
+  user_data            = data.template_cloudinit_config.indexer_cluster_cloud_init.rendered
   ebs_block_device {
     device_name = "/dev/sdf"
     volume_type = "standard"
-    volume_size = var.splunk_ixrc_volume_size
+    volume_size = var.splunk_indexer_cluster_volume_size
   }
   root_block_device {
     volume_type = "standard"
-    volume_size = var.splunk_ixrc_root_volume_size
+    volume_size = var.splunk_indexer_cluster_root_volume_size
   }
 }
 
-resource "aws_autoscaling_group" "splunk_ixrc" {
+resource "aws_autoscaling_group" "splunk_indexer_cluster" {
   # Force a redeployment when launch configuration changes.
   # This will reset the desired capacity if it was changed due to
   # autoscaling events.
   depends_on = [
-  aws_instance.splunk_ixrcmaster]
+  aws_instance.splunk_indexer_clustermaster]
   count                = var.enable_splunk_shc ? 1 : 0
   name_prefix          = "Splunk-IXRC-asg-${var.project_name}"
-  min_size             = var.ixrcmembercount
-  desired_capacity     = var.ixrcmembercount
-  max_size             = var.ixrcmembercount
+  min_size             = var.indexer_clustermembercount
+  desired_capacity     = var.indexer_clustermembercount
+  max_size             = var.indexer_clustermembercount
   health_check_type    = "EC2"
-  launch_configuration = aws_launch_configuration.splunk_ixrc.0.name
+  launch_configuration = aws_launch_configuration.splunk_indexer_cluster.0.name
   vpc_zone_identifier = [
     var.subnetAid,
   var.subnetBid]
@@ -515,7 +515,7 @@ data "template_file" "deployer_init" {
     shclusterlabel          = var.project_name
     splunkingest            = var.splunk_ingest_port
     project_name            = var.project_name
-    splunkixrasgname        = aws_autoscaling_group.splunk_ixrc.0.name
+    splunkixrasgname        = aws_autoscaling_group.splunk_indexer_cluster.0.name
   }
 }
 
@@ -587,8 +587,8 @@ data "template_file" "shc_init" {
     asgindex                        = var.asgindex
     shc_init_check_retry_count      = var.shc_init_check_retry_count
     shc_init_check_retry_sleep_wait = var.shc_init_check_retry_sleep_wait
-    ixrcmaster                      = aws_instance.splunk_ixrcmaster.0.private_dns
-    ixrckey                         = var.ixrckey
+    indexer_clustermaster                      = aws_instance.splunk_indexer_clustermaster.0.private_dns
+    indexer_clusterkey                         = var.indexer_clusterkey
     splunkingest                    = var.splunk_ingest_port
     project_name                    = var.project_name
   }
@@ -768,7 +768,7 @@ resource "aws_autoscaling_group" "splunk_shc" {
   # This will reset the desired capacity if it was changed due to
   # autoscaling events.
   depends_on = [
-  aws_autoscaling_group.splunk_ixrc]
+  aws_autoscaling_group.splunk_indexer_cluster]
   count                = var.enable_splunk_shc ? 1 : 0
   name_prefix          = "Splunk-SHC-asg-${var.project_name}"
   min_size             = var.shcmembercount
