@@ -183,7 +183,7 @@ resource "aws_instance" "splunk" {
 #public single node splunk instance security group
 resource "aws_security_group" "splunk_sg_single_node" {
   count       = var.enable_splunk_shc ? 0 : 1
-  name        = "gtos_public_splunk_sg_single_node"
+  name        = "splunk_public_splunk_sg_single_node"
   description = "security group to allow access to public single node splunk instance"
   vpc_id      = var.vpc_id
 
@@ -350,7 +350,7 @@ data "template_cloudinit_config" "ixrc_cloud_init" {
 #allows ssh from the bastion host subnet
 resource "aws_security_group" "splunk_sg_ixrc" {
   count       = var.enable_splunk_shc ? 1 : 0
-  name        = "gtos_splunk_sg_ixrc"
+  name        = "splunk_splunk_sg_ixrc"
   description = "Used by members for splunk ixrc"
   vpc_id      = var.vpc_id
 
@@ -621,7 +621,7 @@ data "template_cloudinit_config" "shc_cloud_init" {
 #allows ssh from the bastion host subnet
 resource "aws_security_group" "splunk_sg_shc" {
   count       = var.enable_splunk_shc ? 1 : 0
-  name        = "gtos_splunk_sg_shc"
+  name        = "splunk_splunk_sg_shc"
   description = "Used by members for splunk shc"
   vpc_id      = var.vpc_id
 
@@ -811,7 +811,7 @@ resource "aws_autoscaling_group" "splunk_shc" {
 #public splunk alb security group
 resource "aws_security_group" "splunk_sg_alb" {
   count       = var.enable_splunk_shc ? 1 : 0
-  name        = "gtos_public_splunk_sg_alb"
+  name        = "splunk_public_splunk_sg_alb"
   description = "Used for access to public splunk alb"
   vpc_id      = var.vpc_id
 

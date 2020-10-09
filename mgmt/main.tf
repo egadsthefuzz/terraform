@@ -49,7 +49,7 @@ resource "aws_lambda_function" "splunk_app_deploy" {
   function_name = "splunkappdeployer"
 
   # The bucket name as created earlier with "aws s3api create-bucket"
-  s3_bucket = var.gtos_splunk_landing
+  s3_bucket = var.splunk_splunk_landing
   s3_key    = "splunk/apps/splunkappdeploy.zip"
 
   # "main" is the filename within the zip file (main.js) and "handler"
@@ -133,7 +133,7 @@ resource "null_resource" "copy_splunk_license_file" {
   depends_on = [
   aws_s3_bucket.s3_bucket_splunk_license]
   provisioner "local-exec" {
-    command = "aws s3 cp s3://${var.gtos_splunk_landing}/${var.splunk_license_file} s3://${var.splunk_license_bucket}/${var.splunk_license_file}"
+    command = "aws s3 cp s3://${var.splunk_splunk_landing}/${var.splunk_license_file} s3://${var.splunk_license_bucket}/${var.splunk_license_file}"
   }
 }
 
@@ -226,7 +226,7 @@ resource "aws_vpc_endpoint" "s3" {
 }
 
 resource "aws_vpc_endpoint_route_table_association" "splunk_pvt_s3" {
-  route_table_id  = var.gtos_private_route_table_id
+  route_table_id  = var.splunk_private_route_table_id
   vpc_endpoint_id = aws_vpc_endpoint.s3.id
 }
 
@@ -259,7 +259,7 @@ resource "aws_instance" "splunk_license_server" {
 
 #splunk security group for license server
 resource "aws_security_group" "splunk_sg_license_server" {
-  name        = "gtos_splunk_license_server_sg"
+  name        = "splunk_splunk_license_server_sg"
   description = "security group for splunk license server"
   vpc_id      = var.vpc_id
 
@@ -447,7 +447,7 @@ resource "aws_eip" "nat_eip" {
 
 resource "aws_security_group" "nat-sg" {
   count       = var.enable_nat_instance ? 1 : 0
-  name        = "gtos_nat_sg"
+  name        = "splunk_nat_sg"
   description = "Used for access to public splunk alb"
   vpc_id      = var.vpc_id
 
@@ -490,7 +490,7 @@ resource "aws_security_group" "nat-sg" {
 
 #add a new route to the private subnet route table
 resource aws_route "nat_route" {
-  route_table_id         = var.gtos_private_route_table_id
+  route_table_id         = var.splunk_private_route_table_id
   destination_cidr_block = "0.0.0.0/0"
   instance_id            = aws_instance.nat_instance.0.id
 }

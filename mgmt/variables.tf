@@ -17,7 +17,7 @@ variable "key_name" {}
 variable "splunk_license_bucket" {}
 variable "splunk_license_file" {}
 variable "project_name" {}
-variable "gtos_splunk_landing" {}
+variable "splunk_splunk_landing" {}
 variable "ec2_ami" {}
 variable "bastion_instance_type" {}
 variable "accessip" {
@@ -26,7 +26,7 @@ variable "splunk_license_file_path" {}
 variable "bastion_windows_name" {}
 variable "spot_price" {}
 variable "endpoint_service_name" {}
-variable "gtos_private_route_table_id" {}
+variable "splunk_private_route_table_id" {}
 variable "splunk_license_master_key" {}
 variable "ec2_user" {}
 variable "bastion_user" {}

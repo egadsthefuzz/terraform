@@ -9,62 +9,62 @@
 data "aws_availability_zones" "available" {}
 
 #vpc
-resource "aws_vpc" "gtosvpc" {
+resource "aws_vpc" "splunkvpc" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
   enable_dns_support   = true
   tags = {
-    Name    = "gtos_vpc"
-    project = "gtos"
+    Name    = "splunk_vpc"
+    project = "splunk"
     group   = "splunk"
   }
 }
 
 #internet gateway
-resource "aws_internet_gateway" "gtos_igw" {
-  vpc_id = aws_vpc.gtosvpc.id
+resource "aws_internet_gateway" "splunk_igw" {
+  vpc_id = aws_vpc.splunkvpc.id
   tags = {
     Project = var.project_name
     group   = "splunk"
-    Name    = "gtos_igw"
+    Name    = "splunk_igw"
   }
 }
 
 # public route table
-resource "aws_route_table" "gtos_route_table_public" {
-  vpc_id = aws_vpc.gtosvpc.id
+resource "aws_route_table" "splunk_route_table_public" {
+  vpc_id = aws_vpc.splunkvpc.id
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.gtos_igw.id
+    gateway_id = aws_internet_gateway.splunk_igw.id
   }
   tags = {
-    Name    = "gtos_public_rt"
+    Name    = "splunk_public_rt"
     Project = var.project_name
     group   = "splunk"
   }
 }
 
 # private route table
-resource "aws_route_table" "gtos_route_table_private" {
-  vpc_id = aws_vpc.gtosvpc.id
+resource "aws_route_table" "splunk_route_table_private" {
+  vpc_id = aws_vpc.splunkvpc.id
 
   tags = {
-    Name    = "gtos_private_rt"
+    Name    = "splunk_private_rt"
     Project = var.project_name
     Group   = "splunk"
   }
 }
 
 #create two public subnets
-resource "aws_subnet" "gtos_subnet_public" {
+resource "aws_subnet" "splunk_subnet_public" {
   count                   = 2
-  vpc_id                  = aws_vpc.gtosvpc.id
+  vpc_id                  = aws_vpc.splunkvpc.id
   cidr_block              = var.public_cidrs[count.index]
   map_public_ip_on_launch = true
   availability_zone       = data.aws_availability_zones.available.names[count.index]
 
   tags = {
-    Name    = "gtos_public_subnet_${count.index + 1}"
+    Name    = "splunk_public_subnet_${count.index + 1}"
     Project = var.project_name
 
   }
@@ -72,43 +72,43 @@ resource "aws_subnet" "gtos_subnet_public" {
 
 
 #create two private subnets
-resource "aws_subnet" "gtos_subnet_private" {
+resource "aws_subnet" "splunk_subnet_private" {
   count             = 2
-  vpc_id            = aws_vpc.gtosvpc.id
+  vpc_id            = aws_vpc.splunkvpc.id
   cidr_block        = var.private_cidrs[count.index]
   availability_zone = data.aws_availability_zones.available.names[count.index]
 
   tags = {
-    Name    = "gtos_private_subnet_${count.index + 1}"
+    Name    = "splunk_private_subnet_${count.index + 1}"
     Project = var.project_name
 
   }
 }
 
 #create a private subnet, this is where users live
-resource "aws_subnet" "gtos_user_subnet" {
-  vpc_id            = aws_vpc.gtosvpc.id
+resource "aws_subnet" "splunk_user_subnet" {
+  vpc_id            = aws_vpc.splunkvpc.id
   cidr_block        = var.user_cidr
   availability_zone = data.aws_availability_zones.available.names[0]
   tags = {
-    Name    = "gtos_user_subnet"
+    Name    = "splunk_user_subnet"
     Project = var.project_name
 
   }
 }
 
 #route table association - public
-resource "aws_route_table_association" "gtos_public_rt_assoc" {
-  count          = length(aws_subnet.gtos_subnet_public)
-  subnet_id      = aws_subnet.gtos_subnet_public.*.id[count.index]
-  route_table_id = aws_route_table.gtos_route_table_public.id
+resource "aws_route_table_association" "splunk_public_rt_assoc" {
+  count          = length(aws_subnet.splunk_subnet_public)
+  subnet_id      = aws_subnet.splunk_subnet_public.*.id[count.index]
+  route_table_id = aws_route_table.splunk_route_table_public.id
 }
 
 
 #route table association - public
-resource "aws_route_table_association" "gtos_private_rt_assoc" {
-  count          = length(aws_subnet.gtos_subnet_private)
-  subnet_id      = aws_subnet.gtos_subnet_private.*.id[count.index]
-  route_table_id = aws_route_table.gtos_route_table_private.id
+resource "aws_route_table_association" "splunk_private_rt_assoc" {
+  count          = length(aws_subnet.splunk_subnet_private)
+  subnet_id      = aws_subnet.splunk_subnet_private.*.id[count.index]
+  route_table_id = aws_route_table.splunk_route_table_private.id
 }
 
