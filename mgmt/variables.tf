@@ -17,7 +17,7 @@ variable "key_name" {}
 variable "splunk_license_bucket" {}
 variable "splunk_license_file" {}
 variable "project_name" {}
-variable "gtos_gmnts_landing" {}
+variable "gtos_splunk_landing" {}
 variable "ec2_ami" {}
 variable "bastion_instance_type" {}
 variable "accessip" {

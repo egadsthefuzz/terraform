@@ -16,7 +16,7 @@ resource "aws_vpc" "gtosvpc" {
   tags = {
     Name    = "gtos_vpc"
     project = "gtos"
-    group   = "gmnts"
+    group   = "splunk"
   }
 }
 
@@ -25,7 +25,7 @@ resource "aws_internet_gateway" "gtos_igw" {
   vpc_id = aws_vpc.gtosvpc.id
   tags = {
     Project = var.project_name
-    group   = "gmnts"
+    group   = "splunk"
     Name    = "gtos_igw"
   }
 }
@@ -40,7 +40,7 @@ resource "aws_route_table" "gtos_route_table_public" {
   tags = {
     Name    = "gtos_public_rt"
     Project = var.project_name
-    group   = "gmnts"
+    group   = "splunk"
   }
 }
 
@@ -51,7 +51,7 @@ resource "aws_route_table" "gtos_route_table_private" {
   tags = {
     Name    = "gtos_private_rt"
     Project = var.project_name
-    Group   = "gmnts"
+    Group   = "splunk"
   }
 }
 

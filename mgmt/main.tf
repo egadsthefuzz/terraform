@@ -49,7 +49,7 @@ resource "aws_lambda_function" "splunk_app_deploy" {
   function_name = "splunkappdeployer"
 
   # The bucket name as created earlier with "aws s3api create-bucket"
-  s3_bucket = var.gtos_gmnts_landing
+  s3_bucket = var.gtos_splunk_landing
   s3_key    = "splunk/apps/splunkappdeploy.zip"
 
   # "main" is the filename within the zip file (main.js) and "handler"
@@ -133,7 +133,7 @@ resource "null_resource" "copy_splunk_license_file" {
   depends_on = [
   aws_s3_bucket.s3_bucket_splunk_license]
   provisioner "local-exec" {
-    command = "aws s3 cp s3://${var.gtos_gmnts_landing}/${var.splunk_license_file} s3://${var.splunk_license_bucket}/${var.splunk_license_file}"
+    command = "aws s3 cp s3://${var.gtos_splunk_landing}/${var.splunk_license_file} s3://${var.splunk_license_bucket}/${var.splunk_license_file}"
   }
 }
 

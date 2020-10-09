@@ -19,7 +19,7 @@ for i in $(
   retry=0
   while [[ "$ready" == false && "$retry" != ${shc_init_check_retry_count} ]]; do
     echo "checking..."$host
-    if (($(curl -sk $host/services/shcluster/config -u admin:gmntssplunk | grep -oP '(?<=shcluster_label">)[^<]+') == ${shclusterlabel})); then
+    if (($(curl -sk $host/services/shcluster/config -u admin:splunk | grep -oP '(?<=shcluster_label">)[^<]+') == ${shclusterlabel})); then
       echo "host is ready"
       ready="true"
       ((readycount += 1))
@@ -32,7 +32,7 @@ done
 if [[ "$readycount" == ${shcmembercount} ]]; then
   echo "setting shc captain...."
   shcmem=$${shcmem:0:-1}
-  sudo -u splunk /data/gmnts/splunk/bin/splunk bootstrap shcluster-captain -servers_list $shcmem -auth admin:${splunkadminpass}
+  sudo -u splunk /data/splunk/splunk/bin/splunk bootstrap shcluster-captain -servers_list $shcmem -auth admin:${splunkadminpass}
   sudo service splunk restart
 else
   echo "node "$host" not ready..exiting..."
