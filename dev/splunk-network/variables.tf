@@ -26,14 +26,3 @@ variable "project_name" {
   default = "monitoring"
 }
 
-variable "shared_credentials" {
-  default = "/home/william/.aws/credentials"
-}
-
-variable "profile" {
-  default = "default"
-}
-
-variable "region" {
-  default = "ap-southeast-2"
-}

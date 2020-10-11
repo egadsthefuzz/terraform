@@ -77,17 +77,6 @@ variable "app" {
 variable "splunk_app_deploy_bucket" {
   default = "splunk-app-deploy"
 }
-variable "shared_credentials" {
-  default = "/home/william/.aws/credentials"
-}
-
-variable "profile" {
-  default = "default"
-}
-
-variable "region" {
-  default = "ap-southeast-2"
-}
 variable "data_local_file_public_key" {
   default = "/home/william/.ssh/id_rsa.pub"
 }

@@ -6,11 +6,6 @@
 # custom public routetable with route to internetgateway
 # route table associations for both the public subnets
 # ----- networking/main.tf
-provider aws {
-  shared_credentials_file = var.shared_credentials
-  profile                 = var.profile
-  region                  = var.region
-}
 
 data "aws_availability_zones" "available" {
   filter {

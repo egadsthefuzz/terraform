@@ -6,12 +6,6 @@ locals {
   }
 }
 
-provider aws {
-  shared_credentials_file = var.shared_credentials
-  profile                 = var.profile
-  region                  = var.region
-}
-
 # Create a data object using the user's public SSH key
 # If no such file exists, the user must generate it using ssh-keygen
 data local_file "public_key" {

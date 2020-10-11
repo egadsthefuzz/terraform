@@ -17,22 +17,4 @@ module terraform_state_backend {
   force_destroy                      = false
 }
 
-# Set AWS as the provider and establish creds and default region (alias isn't needed here)
-provider aws {
-#  alias = "backend_aws"
-  shared_credentials_file = var.backend_shared_credentials
-  profile                 = var.backend_profile
-  region                  = var.backend_region
-}
 
-variable "backend_shared_credentials" {
-  default = "/home/william/.aws/credentials"
-}
-
-variable "backend_profile" {
-  default = "default"
-}
-# AWS region
-variable "backend_region" {
-  default = "ap-southeast-2"
-}

@@ -76,15 +76,6 @@ variable "indexer_clusterlabel" { default = "testcluster"}
 variable "splunk_ingest_port" { default = "9997"}
 variable "environment" { default = "test"}
 variable "app" { default = "splunk"}
-variable "region" { default = "ap-southeast-2"}
-
-variable "shared_credentials" {
-  default = "/home/william/.aws/credentials"
-}
-
-variable "profile" {
-  default = "default"
-}
 #variable "data_local_file_public_key" {
 #  default = "/home/william/.ssh/id_rsa.pub"
 #}
